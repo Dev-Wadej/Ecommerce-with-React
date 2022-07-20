@@ -1,3 +1,4 @@
+import { async } from '@firebase/util';
 import { initializeApp } from 'firebase/app';
 import {
     getAuth,
@@ -13,6 +14,10 @@ import {
     getDoc,
     setDoc,
     getFirestore,
+    collection,
+    writeBatch,
+    query,
+    getDocs,
 } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -93,5 +98,38 @@ export const signInAuthUserWithEmailAndPassword = async(
 export const signOutUser = async() => {
     await signOut(auth);
 };
-export const onAuthStateChangedListener = (callback) =>
-    onAuthStateChanged(auth, callback);
+export const onAuthStateChangedListener = (callback) => {
+    return onAuthStateChanged(auth, callback);
+};
+
+/// Storing data in firestore starts here
+
+export const addCollectionAndDocuments = async(
+    collectionKey,
+    objectsToAdd
+) => {
+    const collectionRef = collection(db, collectionKey);
+    const batch = writeBatch(db);
+    objectsToAdd.forEach((object) => {
+        const docRef = doc(collectionRef, object.title.toLowerCase());
+        batch.set(docRef, object);
+    });
+    await batch.commit();
+    console.log('done');
+};
+
+export const getCategoriesAndDocuments = async() => {
+    const collectionRef = collection(db, 'categories');
+    const q = query(collectionRef);
+
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((docSnapshot) => docSnapshot.data());
+    // .reduce(
+    //     (acc, docSnapshot) => {
+    //         const { title, items } = docSnapshot.data();
+    //         acc[title.toLowerCase()] = items;
+    //         return acc;
+    //     }, {}
+    // );
+    // return categoryMap;
+};
